@@ -6,3 +6,25 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Azure Functions local settings
+.local.settings.json
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# VS Code specific
+.vscode/
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
