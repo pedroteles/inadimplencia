@@ -6,3 +6,4 @@ azure-functions
 requests
 psycopg2-binary
 azure-storage-blob
+dotenv

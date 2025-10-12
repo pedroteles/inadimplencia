@@ -51,31 +51,44 @@ def extract_and_insert(zip_bytes, year, conn):
         print(f"Erro ao extrair ZIP do ano {year}: {e}")
 
 def run_extraction():
-    conn = get_connection()
-    current_year = get_current_year()
-    current_year = 2013  # Para testes locais, definir um ano fixo
+    conn = None  # Inicializa a conexão como None
+    try:
+        conn = get_connection()
+        print("Conexão com o banco de dados estabelecida com sucesso.")
 
-    for year in range(2012, current_year + 1):
-        processed_months = get_processed_months(conn, year)
-        if len(processed_months) == 12:
-            print(f"Ano {year} já completamente processado. Pulando.")
-            continue
+        first_year = 2012
+        first_year = 2024  # Para testes locais, definir um ano fixo
+        current_year = get_current_year()
+        #current_year = 2012  # Para testes locais, definir um ano fixo
 
-        zip_bytes = download_zip(year)
-        if zip_bytes is None:
-            for month in range(1, 13):
-                if month not in processed_months:
-                    log_extraction(conn, year, month, 'erro_download')
-            continue
+        for year in range(first_year, current_year + 1):
+            processed_months = get_processed_months(conn, year)
+            if len(processed_months) == 12:
+                print(f"Ano {year} já completamente processado. Pulando.")
+                continue
+            print(f"Iniciando extração para o ano {year}...")    
+            zip_bytes = download_zip(year)
+            if zip_bytes is None:
+                for month in range(1, 13):
+                    if month not in processed_months:
+                        log_extraction(conn, year, month, 'erro_download')
+                continue
 
-        extract_and_insert(zip_bytes, year, conn)
+            extract_and_insert(zip_bytes, year, conn)
 
-        # Se houve erro de inserção, salvar ZIP no Blob Storage
-        remaining_months = get_processed_months(conn, year)
-        if len(remaining_months) < 12:
-            save_zip_to_blob(zip_bytes, year)
-
-    conn.close()
+            # Se houve erro de inserção, salvar ZIP no Blob Storage
+            remaining_months = get_processed_months(conn, year)
+            if len(remaining_months) < 12:
+                save_zip_to_blob(zip_bytes, year)
+    except Exception as e:
+        print(f"ERRO CRÍTICO: Não foi possível conectar ao banco de dados. {e}")
+        print("A extração será abortada. Verifique as credenciais e a conexão de rede.")
+        
+    finally:
+        if conn:
+            conn.close()
+            print("Conexão com o banco de dados encerrada.")       
 
 # Executar a extração
-run_extraction()
+if __name__ == "__main__":
+    run_extraction()
