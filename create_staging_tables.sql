@@ -4,6 +4,8 @@ CREATE SCHEMA IF NOT EXISTS stg;
 -- Tabela de dados brutos
 CREATE TABLE IF NOT EXISTS stg.scr_raw_data (
     id SERIAL PRIMARY KEY,
+    ano int,
+    mes int,
     data_base TEXT,
     uf TEXT,
     tcb TEXT,

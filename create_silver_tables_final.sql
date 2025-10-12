@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS silver.ocupacao (
 CREATE TABLE IF NOT EXISTS silver.cnae_secao (
     id SERIAL PRIMARY KEY,
     codigo TEXT UNIQUE NOT NULL
-)
+);
 
 CREATE TABLE IF NOT EXISTS silver.porte (
     id SERIAL PRIMARY KEY,
