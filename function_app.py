@@ -17,9 +17,11 @@ def is_process_already_active() -> bool:
     se uma solicitação já está na fila.
     """
     try:
+        print("estou aqqui, ponto de verificação")
         connect_str = os.getenv('AzureWebJobsStorage')
         if not connect_str:
             logging.error("A string de conexão 'AzureWebJobsStorage' não está configurada.")
+            print("A string de conexão 'AzureWebJobsStorage' não está configurada.")
             return True # Falha segura: assume que está ativo para evitar duplicatas.
 
         # 1. Verifica se um processo está em execução (verificando o blob lease)
@@ -29,14 +31,16 @@ def is_process_already_active() -> bool:
             properties = blob_client.get_blob_properties()
             if properties.lease.status == 'locked':
                 logging.info("Verificação de estado: Um processo já está em execução (lock ativo).")
+                print("Um processo já está em execução (lock ativo).")
                 return True
 
         # 2. Verifica se há mensagens na fila
         queue_service_client = QueueServiceClient.from_connection_string(connect_str)
         queue_client = queue_service_client.get_queue_client("extraction-queue")
-        properties = queue_client.get_properties()
+        properties = queue_client.get_queue_properties()
         if properties.approximate_message_count > 0:
             logging.info("Verificação de estado: Já existe uma solicitação na fila.")
+            print("Já existe uma solicitação na fila.")
             return True
 
     except ResourceNotFoundError:
@@ -44,6 +48,7 @@ def is_process_already_active() -> bool:
         return False
     except Exception as e:
         logging.error(f"Erro ao verificar o estado do processo: {e}", exc_info=True)
+        print(f"Erro ao verificar o estado do processo: {e}")
         return True # Falha segura
 
     return False
@@ -53,8 +58,8 @@ def is_process_already_active() -> bool:
 @app.route(route="start_extraction_http")
 @app.queue_output(arg_name="queue_msg", queue_name="extraction-queue", connection="AzureWebJobsStorage")
 def start_extraction_http(req: func.HttpRequest, queue_msg: func.Out[str]) -> func.HttpResponse:
-    logging.info('Gatilho HTTP acionado.')
-    
+    logging.info('Gatilho HTTP acionado.')   
+
     if is_process_already_active():
         return func.HttpResponse(
             "O processo de extração já está em execução ou na fila. Nenhuma nova solicitação foi adicionada.",
@@ -106,7 +111,7 @@ def execute_extraction_from_queue(msg: func.QueueMessage) -> None:
         blob_service_client = BlobServiceClient.from_connection_string(connect_str)
         
         container_client = blob_service_client.get_container_client("singleton-locks")
-        container_client.create_container(fail_on_exist=False)
+        container_client.create_container()
         blob_client = container_client.get_blob_client("extraction_lock.txt")
         
         try:

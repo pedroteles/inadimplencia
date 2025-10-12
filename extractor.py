@@ -95,7 +95,7 @@ def run_extraction():
         print("Conexão com o banco de dados estabelecida com sucesso.")
 
         first_year = 2012
-        first_year = 2024  # Para testes locais, definir um ano fixo
+        #first_year = 2024  # Para testes locais, definir um ano fixo
         current_year = get_current_year()
         #current_year = 2012  # Para testes locais, definir um ano fixo
 
