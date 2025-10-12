@@ -8,7 +8,7 @@ env.bak/
 venv.bak/
 
 # Azure Functions local settings
-.local.settings.json
+local.settings.json
 
 # Python cache
 __pycache__/
