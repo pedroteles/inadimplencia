@@ -1,4 +1,5 @@
 import io
+import os
 import re
 import zipfile
 import requests
@@ -8,6 +9,8 @@ from datetime import datetime
 from db import get_connection, insert_csv_data, check_connection_and_permissions
 from storage import save_zip_to_blob, load_zip_from_blob, delete_zip_from_blob
 from logger import get_processed_months, log_extraction
+
+
 
 BASE_URL = "https://www.bcb.gov.br/pda/desig/planilha_{ano}.zip"
 
@@ -91,7 +94,7 @@ def extract_and_insert(zip_bytes, year, conn, processed_months):
     
     return had_errors_this_run
 
-def run_extraction():
+def run_extraction(first_year, current_year):
     conn = None  # Inicializa a conexão como None
     try:
         # --- Bloco 1: Validação da conexão e permissões ---
@@ -104,11 +107,8 @@ def run_extraction():
             print(f"ERRO CRÍTICO NA INICIALIZAÇÃO: {e}")
             return # Encerra a função se não houver conexão válida
 
-        first_year = 2012
-        first_year = 2025  # Para testes locais, definir um ano fixo
-        current_year = get_current_year()
-        #current_year = 2012  # Para testes locais, definir um ano fixo
-
+        print(f"Executando extração para o período de {first_year} a {current_year}.")
+        
         for year in range(first_year, current_year + 1):
             processed_months = get_processed_months(conn, year)
             if len(processed_months) == 12:
@@ -168,4 +168,15 @@ def run_extraction():
 
 # Executar a extração
 if __name__ == "__main__":
-    run_extraction()
+    # A lógica de configuração agora reside aqui, no chamador.
+    # Para 'first_year', usa a variável de ambiente ou o padrão 2012.
+    start_year = int(os.getenv("FIRST_YEAR", 2012))
+    
+    # Para 'current_year', usa a variável de ambiente ou o padrão dinâmico.
+    end_year_str = os.getenv("CURRENT_YEAR")
+    if end_year_str:
+        end_year = int(end_year_str)
+    else:
+        end_year = get_current_year()
+        
+    run_extraction(start_year, end_year)

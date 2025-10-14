@@ -3,7 +3,7 @@ import logging
 import os
 import threading
 import time
-from extractor import run_extraction
+from extractor import run_extraction, get_current_year
 from azure.storage.blob import BlobServiceClient
 from azure.storage.queue import QueueServiceClient
 from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
@@ -138,7 +138,19 @@ def execute_extraction_from_queue(msg: func.QueueMessage) -> None:
         try:
             print("Iniciando a extração...")
             logging.info('Iniciando a extração...')
-            run_extraction()
+
+            # Para 'first_year', usa a variável de ambiente ou o padrão fixo.
+            first_year = int(os.getenv("FIRST_YEAR", 2012))
+    
+            # Para 'current_year', usa a variável de ambiente ou o padrão dinâmico.
+            current_year_str = os.getenv("CURRENT_YEAR")
+            if current_year_str:
+                current_year = int(current_year_str)
+            else:
+                current_year = get_current_year()
+
+            # Chama a lógica de negócio com a configuração resolvida.
+            run_extraction(first_year, current_year)
             print("Processo de extração finalizado com sucesso.")
             logging.info('Processo de extração finalizado com sucesso.')
         except Exception as e:
