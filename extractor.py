@@ -2,9 +2,10 @@ import io
 import re
 import zipfile
 import requests
+import psycopg2
 from datetime import datetime
 
-from db import get_connection, insert_csv_data
+from db import get_connection, insert_csv_data, check_connection_and_permissions
 from storage import save_zip_to_blob, load_zip_from_blob, delete_zip_from_blob
 from logger import get_processed_months, log_extraction
 
@@ -70,14 +71,16 @@ def extract_and_insert(zip_bytes, year, conn, processed_months):
                                 if file_year == year:
                                     with z.open(file_name) as f:
                                         log_extraction(conn, year, month, 'andamento')
-                                        csv_content = f.read().decode("utf-8")
-                                        insert_csv_data(conn, csv_content, year, month)
+                                        text_stream = io.TextIOWrapper(f, encoding='utf-8')
+                                        insert_csv_data(conn, text_stream, year, month)
                                         log_extraction(conn, year, month, 'sucesso')
+                                        conn.commit()  # Confirma a transação para este mês
                                         print(f"Mês {month}/{year} processado com sucesso.")
                                 else:
                                     print(f"Aviso: Ano do arquivo ({file_year}) não corresponde ao ano esperado ({year}). Arquivo ignorado: {file_name}")
                             except Exception as e:
                                 print(f"Erro ao inserir dados de {month}/{year}: {e}")
+                                conn.rollback()  # REVERTE a transação para este mês
                                 log_extraction(conn, year, month, 'erro_insercao')
                                 had_errors_this_run = True # Sinaliza que um erro ocorreu
                     else:
@@ -91,11 +94,18 @@ def extract_and_insert(zip_bytes, year, conn, processed_months):
 def run_extraction():
     conn = None  # Inicializa a conexão como None
     try:
-        conn = get_connection()
-        print("Conexão com o banco de dados estabelecida com sucesso.")
+        # --- Bloco 1: Validação da conexão e permissões ---
+        try:
+            check_connection_and_permissions()
+            conn = get_connection()
+            print("Conexão com o banco de dados estabelecida com sucesso.")
+        except psycopg2.Error as e:
+            # Captura erros de conexão ou permissão e encerra
+            print(f"ERRO CRÍTICO NA INICIALIZAÇÃO: {e}")
+            return # Encerra a função se não houver conexão válida
 
         first_year = 2012
-        #first_year = 2024  # Para testes locais, definir um ano fixo
+        first_year = 2025  # Para testes locais, definir um ano fixo
         current_year = get_current_year()
         #current_year = 2012  # Para testes locais, definir um ano fixo
 
@@ -144,8 +154,12 @@ def run_extraction():
             elif loaded_from_blob and not had_errors:
                 delete_zip_from_blob(year)
 
+    except psycopg2.Error as e:
+        # Captura erros do banco de dados que podem ocorrer na lógica principal
+        print(f"ERRO CRÍTICO de Banco de Dados durante a execução: {e}")
     except Exception as e:
-        print(f"ERRO CRÍTICO: Não foi possível conectar ao banco de dados. {e}")
+        # Captura quaisquer outros erros inesperados
+        print(f"ERRO CRÍTICO INESPERADO DURANTE A EXECUÇÃO: {e}")
         
     finally:
         if conn:

@@ -17,7 +17,6 @@ def is_process_already_active() -> bool:
     se uma solicitação já está na fila.
     """
     try:
-        print("estou aqqui, ponto de verificação")
         connect_str = os.getenv('AzureWebJobsStorage')
         if not connect_str:
             logging.error("A string de conexão 'AzureWebJobsStorage' não está configurada.")
@@ -47,10 +46,7 @@ def is_process_already_active() -> bool:
         # Ocorre se o container ou a fila ainda não existem. É seguro continuar.
         return False
     except Exception as e:
-        logging.error(f"Erro ao verificar o estado do processo: {e}", exc_info=True)
-        print(f"Erro ao verificar o estado do processo: {e}")
         return True # Falha segura
-
     return False
 
 # --- GATILHOS INTELIGENTES ---
@@ -90,6 +86,7 @@ def start_extraction_timer(timer: func.TimerRequest, queue_msg: func.Out[str]) -
 @app.queue_trigger(arg_name="msg", queue_name="extraction-queue", connection="AzureWebJobsStorage")
 def execute_extraction_from_queue(msg: func.QueueMessage) -> None:
     logging.info(f'Gatilho de Fila acionado pela mensagem: {msg.get_body().decode("utf-8")}')
+    print("Gatilho de Fila acionado pela mensagem:", msg.get_body().decode("utf-8"))
     
     lease_client = None
     stop_event = threading.Event()
@@ -100,28 +97,38 @@ def execute_extraction_from_queue(msg: func.QueueMessage) -> None:
             try:
                 client.renew()
                 logging.info("Lease renovado com sucesso.")
+                print("Lease renovado com sucesso.")
             except Exception as e:
-                logging.error(f"Falha ao renovar o lease: {e}. A thread de renovação será encerrada.")
                 break # Sai do loop se a renovação falhar
             # Espera por 25 segundos antes da próxima renovação
+            print("Dormindo por 25 segundos antes da próxima renovação.")
             time.sleep(25)
 
     try:
         connect_str = os.getenv('AzureWebJobsStorage')
-        blob_service_client = BlobServiceClient.from_connection_string(connect_str)
-        
+        blob_service_client = BlobServiceClient.from_connection_string(connect_str)        
         container_client = blob_service_client.get_container_client("singleton-locks")
-        container_client.create_container()
+
+        try:
+            container_client.create_container()
+        except ResourceExistsError:
+            # O contêiner já existe, o que é esperado.
+            pass
+        
         blob_client = container_client.get_blob_client("extraction_lock.txt")
         
         try:
             blob_client.upload_blob("lock", overwrite=False)
+            logging.info("Blob de lock criado com sucesso.")
         except ResourceExistsError:
+            # Se o blob já existe, apenas continue
+            logging.info("O blob de lock já existe. Continuando para tentar adquirir o lease.")  
             pass
 
         # Adquire o lease com uma duração de 60 segundos
         lease_client = blob_client.acquire_lease(lease_duration=60)
         logging.info("Bloqueio adquirido com sucesso. Iniciando o processo de extração...")
+        print("Bloqueio adquirido com sucesso. Iniciando o processo de extração...")  
 
         # Cria e inicia a thread de renovação
         renewal_thread = threading.Thread(target=renew_lease_worker, args=(lease_client, stop_event))
@@ -129,8 +136,15 @@ def execute_extraction_from_queue(msg: func.QueueMessage) -> None:
 
         # --- O TRABALHO PESADO ACONTECE AQUI ---
         try:
+            print("Iniciando a extração...")
+            logging.info('Iniciando a extração...')
             run_extraction()
+            print("Processo de extração finalizado com sucesso.")
             logging.info('Processo de extração finalizado com sucesso.')
+        except Exception as e:
+            logging.error(f"Ocorreu um erro durante a extração: {e}", exc_info=True)
+            print(f"Ocorreu um erro durante a extração: {e}")
+            raise
         finally:
             # Garante que a thread de renovação seja parada após o trabalho
             stop_event.set()
@@ -138,11 +152,18 @@ def execute_extraction_from_queue(msg: func.QueueMessage) -> None:
         # -----------------------------------------
 
     except ResourceExistsError:
-        logging.warning("Não foi possível adquirir o bloqueio. Outra instância já está em execução.")
-        return
+        # Este erro ocorre se o lease não pôde ser adquirido.
+        # Isso é esperado se uma instância falhou e o lease ainda não expirou.
+        # Relançamos a exceção para que o Functions Runtime saiba que a execução
+        # falhou e deve tentar novamente mais tarde. Isso aciona o backoff exponencial.
+        logging.warning("Não foi possível adquirir o bloqueio. Outra instância pode estar em execução ou ter falhado. A mensagem será reenfileirada para nova tentativa.")
+        print("Não foi possível adquirir o bloqueio. Outra instância pode estar em execução ou ter falhado. A mensagem será reenfileirada para nova tentativa.")
+        
+        raise # Sinaliza ao runtime para tentar novamente mais tarde
         
     except Exception as e:
         logging.error(f"Ocorreu um erro crítico durante a extração: {e}", exc_info=True)
+        print(f"Ocorreu um erro crítico durante a extração: {e}")
         raise
         
     finally:
