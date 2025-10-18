@@ -1,4 +1,4 @@
-
+-- Criação do schema de staging e tabelas associadas
 CREATE SCHEMA IF NOT EXISTS stg;
 
 -- Tabela de dados brutos
