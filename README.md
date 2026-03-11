@@ -25,7 +25,7 @@ The data pipeline is structured following the Medallion architecture to ensure s
 
 ```markdown
 ## 📂 Repository Structure
-```text
+
 ├── data/                   # Ignored in version control (raw and processed data)
 ├── src/                    
 │   └── scr_bacen/          # Core Python ETL modules for BACEN data
@@ -41,7 +41,7 @@ The data pipeline is structured following the Medallion architecture to ensure s
 │   └── 03_gold/            # Dimensional modeling (Star Schema)
 ├── requirements.txt        # Python dependencies
 └── README.md               # Project documentation
-
+```
 
 ## 🚀 Key Engineering Highlights
 - **Decoupled Logic:** Separated extraction, transformation, and loading phases to ensure modularity and maintainability.
