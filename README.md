@@ -48,3 +48,8 @@ The data pipeline is structured following the Medallion architecture to ensure s
 - **BI Optimization:** Designed the Gold layer specifically to reduce the computational load on the BI engine, proving an understanding of how VertiPaq/embedded BI engines work under the hood.
 - **Scalability:** The pipeline is designed to easily accommodate new data sources or scale up using distributed computing (e.g., Databricks/Spark) if data volume increases.
 - **Cloud Migration PoC (GCP):** While the main pipeline is optimized for relational databases using native SQL COPY, I included a Cloud Data Warehouse Proof of Concept (`gcp_project`). This script demonstrates parallel processing, conversion to columnar formats (Parquet), and BigQuery optimization techniques like Time Partitioning and Clustering to handle massive datasets efficiently.
+
+
+![alt text](doc/dashboard_main.png)
+
+![alt text](doc/dinamic_metrics.png)
