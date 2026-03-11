@@ -1,7 +1,5 @@
 import os
 import psycopg2
-import csv
-import io
 from dotenv import load_dotenv
 
 load_dotenv()  # Carrega as variáveis de ambiente do arquivo .env
