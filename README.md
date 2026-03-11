@@ -53,3 +53,5 @@ The data pipeline is structured following the Medallion architecture to ensure s
 ![alt text](doc/dashboard_main.png)
 
 ![alt text](doc/dinamic_metrics.png)
+
+![alt text](doc/scrdata_ingestion_flow.svg)
