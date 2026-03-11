@@ -20,7 +20,7 @@ The data pipeline is structured following the Medallion architecture to ensure s
 
 1. **Bronze Layer (Raw):** Ingestion of raw regulatory credit files (SCR format) and transactional data without transformations.
 2. **Silver Layer (Cleansed):** Data cleaning, deduplication, and standardization. 
-3. **Gold Layer (Dimensional):** Highly optimized Star Schema (Fact and Dimension tables) designed specifically for BI consumption. This layer guarantees that the risk and default dashboards query millions of rows in milliseconds.
+3. **Gold Layer (Dimensional):** In this layer, instead of adopting the traditional Star Schema, I intentionally consolidated the data into a **OBT (One Big Table)**. The choice to denormalize and structure the data in a single wide table was made to eliminate the cost of JOIN operations during query execution. This design ensures that risk and default dashboards can query millions of rows in milliseconds, maintaining high performance for BI consumption.
 
 
 ```markdown
@@ -38,7 +38,7 @@ The data pipeline is structured following the Medallion architecture to ensure s
 ├── sql/                    # SQL scripts for data modeling
 │   ├── 01_bronze/          # Raw tables DDL
 │   ├── 02_silver/          # Cleansing and standardization queries
-│   └── 03_gold/            # Dimensional modeling (Star Schema)
+│   └── 03_gold/            # Consolidated modeling (One Big Table)
 ├── requirements.txt        # Python dependencies
 └── README.md               # Project documentation
 ```
