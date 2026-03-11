@@ -122,26 +122,12 @@ SELECT
     idx.id AS indexador_id,
     raw.numero_de_operacoes,
     CASE 
-        WHEN raw.numero_de_operacoes = '0' THEN 0
-        WHEN raw.numero_de_operacoes = '1' THEN 1
-        WHEN raw.numero_de_operacoes LIKE '%a%' OR raw.numero_de_operacoes LIKE '%<%' THEN 
-            CASE 
-                WHEN raw.numero_de_operacoes LIKE '%100%' THEN 1
-                WHEN raw.numero_de_operacoes LIKE '%1000%' THEN 100
-                ELSE 1
-            END
-        ELSE CAST(SPLIT_PART(raw.numero_de_operacoes, ' ', 1) AS INTEGER)
+        WHEN raw.numero_de_operacoes = '<= 15' THEN 1
+		ELSE CAST(raw.numero_de_operacoes AS INTEGER)
     END AS numero_de_operacoes_min,
-    CASE 
-        WHEN raw.numero_de_operacoes = '0' THEN 0
-        WHEN raw.numero_de_operacoes = '1' THEN 1
-        WHEN raw.numero_de_operacoes LIKE '%a%' OR raw.numero_de_operacoes LIKE '%<%' THEN 
-            CASE 
-                WHEN raw.numero_de_operacoes LIKE '%100%' THEN 100
-                WHEN raw.numero_de_operacoes LIKE '%1000%' THEN 10000
-                ELSE 999999
-            END
-        ELSE CAST(SPLIT_PART(raw.numero_de_operacoes, ' ', -1) AS INTEGER)
+   CASE 
+        WHEN raw.numero_de_operacoes = '<= 15' THEN 15
+		ELSE CAST(raw.numero_de_operacoes AS INTEGER)
     END AS numero_de_operacoes_max,
     CAST(NULLIF(REPLACE(raw.a_vencer_ate_90_dias, ',', '.'), '') AS NUMERIC) AS a_vencer_ate_90_dias,
     CAST(NULLIF(REPLACE(raw.a_vencer_de_91_ate_360_dias, ',', '.'), '') AS NUMERIC) AS a_vencer_de_91_ate_360_dias,
