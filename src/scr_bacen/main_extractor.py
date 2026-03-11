@@ -12,6 +12,8 @@ from logger import get_processed_months, log_extraction
 
 
 
+
+
 BASE_URL = "https://www.bcb.gov.br/pda/desig/planilha_{ano}.zip"
 
 def get_current_year():

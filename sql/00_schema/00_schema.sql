@@ -1,0 +1,20 @@
+-- SCHEMA: stg
+
+-- DROP SCHEMA IF EXISTS stg ;
+
+CREATE SCHEMA IF NOT EXISTS stg
+    AUTHORIZATION postgres;
+
+    -- SCHEMA: silver
+
+-- DROP SCHEMA IF EXISTS silver ;
+
+CREATE SCHEMA IF NOT EXISTS silver
+    AUTHORIZATION postgres;
+
+    -- SCHEMA: gold
+
+-- DROP SCHEMA IF EXISTS gold ;
+
+CREATE SCHEMA IF NOT EXISTS gold
+    AUTHORIZATION postgres;

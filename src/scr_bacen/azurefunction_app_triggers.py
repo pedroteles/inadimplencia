@@ -3,7 +3,7 @@ import logging
 import os
 import threading
 import time
-from extractor import run_extraction, get_current_year
+from scr_bacen.main_extractor import run_extraction, get_current_year
 from azure.storage.blob import BlobServiceClient
 from azure.storage.queue import QueueServiceClient
 from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
